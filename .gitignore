@@ -1,2 +1,4 @@
 .vscode
-SDL3
+vc
+mingw
+*.exe
