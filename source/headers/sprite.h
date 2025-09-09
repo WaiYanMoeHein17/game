@@ -18,8 +18,10 @@ class Sprite {
     protected:
         SDL_FRect _sourceRect; 
         SDL_Texture* _spriteSheet;
-    private:
+
         float _x, _y;
+    private:
+
 };
 
 #endif // SPRITE_H

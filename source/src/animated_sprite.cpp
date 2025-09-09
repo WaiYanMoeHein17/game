@@ -4,6 +4,7 @@
 #include <SDL3/SDL.h>
 #include <iostream>
 #include <vector>
+#include <cmath>  
 
 using namespace std;
 
@@ -37,6 +38,11 @@ void AnimatedSprite::resetAnimation() {
 }
 
 void AnimatedSprite::playAnimation(string animation, bool once) {
+    if (_animations.count(animation) == 0) {
+        cerr << "No animation found with name: " << animation << endl;
+        return;
+    }
+    
     _currentAnimationOnce = once;
     if (_currentAnimation != animation) {
         _currentAnimation = animation;
@@ -87,14 +93,10 @@ void AnimatedSprite::draw(Graphics& graphics, int x, int y) {
     }
 }
 
-void AnimatedSprite::animationDone(string currentAnimation) {
-    // To be implemented by derived classes
-}
-
-void AnimatedSprite::setUpAnimations() {
+/*void AnimatedSprite::setUpAnimations() {
     // Running animation - 3 frames horizontally
     // Assuming each frame is 96x128 pixels (check the actual spritesheet dimensions)
     addAnimation(3, 0, 128, "RunRight", 96, 128, Vector2D(0, 0));  // Second row of sprites
     addAnimation(3, 0, 256, "RunLeft", 96, 128, Vector2D(0, 0));   // Third row (if available)
     addAnimation(1, 0, 0, "Idle", 96, 128, Vector2D(0, 0));        // First frame as idle
-}
+}*/ 

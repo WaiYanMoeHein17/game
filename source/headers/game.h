@@ -4,6 +4,7 @@
 #include <string>
 #include "sprite.h"
 #include "animated_sprite.h"
+#include "player.h"
 
 using namespace std;
 
@@ -18,6 +19,6 @@ class Game {
         void draw(Graphics &graphics);
         void update(float elapsedTime);
 
-        AnimatedSprite _player;
+        Player _player;
 }; 
 #endif // GAME_H

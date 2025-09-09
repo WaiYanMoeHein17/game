@@ -10,6 +10,7 @@ Holds information for the main game loop
 #include "graphics.h"
 #include "input.h"
 #include "animated_sprite.h"
+#include "player.h"
 
 using namespace std;
 
@@ -34,10 +35,10 @@ void Game::gameLoop() {
     SDL_Event event;
     bool running = true;
     int LAST_UPDATE_TIME = SDL_GetTicks(); // Get the current time in milliseconds
-    _player = AnimatedSprite(graphics, "..//content//spritesheet//Male adventurer//Tilesheet//character_maleAdventurer_sheet.png", 0, 0, 96, 128, 100, 100, 200);
+    _player = Player(graphics, 100, 100);
     //_player = AnimatedSprite(graphics, "..//content//spritesheet//Roguelike//roguelikeChar_transparent.png", 0, 0, 16, 16, 100, 100, 100);
-    _player.setUpAnimations();
-    _player.playAnimation("RunRight");
+    //_player.setUpAnimations();
+    //_player.playAnimation("RunRight");
 
     while (running) {
         input.beginNewFrame();
@@ -50,7 +51,7 @@ void Game::gameLoop() {
                     // Ignore key repeat events
                     input.keyDownEvent(event);
                 } 
-                running = false;
+                //running = false;
             }
 
             else if (event.type == SDL_EVENT_KEY_UP) {
@@ -65,20 +66,52 @@ void Game::gameLoop() {
         if (input.wasKeyPressed(SDL_SCANCODE_ESCAPE)) {
             running = false;
         }
+
+        // Handle movement - use separate if statements instead of else if
+        bool isMoving = false;
+        
+        if (input.isKeyHeld(SDL_SCANCODE_A)) {
+            _player.moveLeft();
+            isMoving = true;
+        }
+        if (input.isKeyHeld(SDL_SCANCODE_D)) {
+            _player.moveRight();
+            isMoving = true;
+        }
+        if (input.isKeyHeld(SDL_SCANCODE_W)) {
+            _player.moveUp();
+            isMoving = true;
+        }
+        if (input.isKeyHeld(SDL_SCANCODE_S)) {
+            _player.moveDown();
+            isMoving = true;
+        }
+        
+        // Handle sprinting
+        if (input.isKeyHeld(SDL_SCANCODE_LSHIFT)) {
+            _player.setSprinting(true);
+        } else {
+            _player.setSprinting(false);
+        }
+        
+        // Stop movement if no movement keys are pressed
+        if (!isMoving) {
+            _player.stop();
+        }
+
         // Calculate elapsed time
         const int CURRENT_TIME_MS = SDL_GetTicks();
         int ELAPSED_TIME_MS = CURRENT_TIME_MS - LAST_UPDATE_TIME;
-        update(min(ELAPSED_TIME_MS, MAX_FRAME_TIME)); // Convert ms to seconds
+        update(min(ELAPSED_TIME_MS, MAX_FRAME_TIME));
         LAST_UPDATE_TIME = CURRENT_TIME_MS;
         
         draw(graphics);
-
     }
 }
 
 void Game::draw(Graphics &graphics) {
     graphics.clear(); 
-    _player.draw(graphics, 100, 100);
+    _player.draw(graphics);
     graphics.flip();
 }
 

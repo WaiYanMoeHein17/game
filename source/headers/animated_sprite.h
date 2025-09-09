@@ -7,6 +7,7 @@
 #include <map>
 #include <vector>
 #include <SDL3/SDL.h>
+#include <cmath>
 
 using namespace std;
 
@@ -28,11 +29,6 @@ class AnimatedSprite : public Sprite {
 
         void draw(Graphics& graphics, int x, int y);
 
-        /*
-        Abstract method to set up animations. Must be implemented by derived classes.
-        */
-        virtual void setUpAnimations(); // Pure virtual function to be implemented by derived classes to set up animations
-
     protected:
         double _timeToUpdate; 
         bool _currentAnimationOnce;
@@ -43,7 +39,15 @@ class AnimatedSprite : public Sprite {
         void stopAnimation();
         void setVisible(bool visible);
         bool isVisible() const;
-        virtual void animationDone(string currentAnimation); // Pure virtual function to be implemented by derived classes
+
+        /*
+        Called when an animation is finished playing.
+        */
+        virtual void animationDone(string currentAnimation) = 0; // Pure virtual function to be implemented by derived classes
+        /*
+        Sets up the animations for the sprite. This method should be overridden in derived classes to define specific animations.
+        */
+        virtual void setUpAnimations() = 0; // Pure virtual function to be implemented by derived classes
 
     private:
         map<string, vector<SDL_FRect>> _animations;
