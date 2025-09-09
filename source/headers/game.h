@@ -3,6 +3,7 @@
 #include <SDL3/SDL.h>
 #include <string>
 #include "sprite.h"
+#include "animated_sprite.h"
 
 using namespace std;
 
@@ -17,6 +18,6 @@ class Game {
         void draw(Graphics &graphics);
         void update(float elapsedTime);
 
-        Sprite _player;
+        AnimatedSprite _player;
 }; 
 #endif // GAME_H

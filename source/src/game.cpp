@@ -9,6 +9,7 @@ Holds information for the main game loop
 #include "game.h"
 #include "graphics.h"
 #include "input.h"
+#include "animated_sprite.h"
 
 using namespace std;
 
@@ -33,7 +34,10 @@ void Game::gameLoop() {
     SDL_Event event;
     bool running = true;
     int LAST_UPDATE_TIME = SDL_GetTicks(); // Get the current time in milliseconds
-    _player = Sprite(graphics, "..\\content\\spritesheet\\roguelikeChar_transparent.png", 0, 0, 16, 16, 0, 0);
+    _player = AnimatedSprite(graphics, "..//content//spritesheet//Male adventurer//Tilesheet//character_maleAdventurer_sheet.png", 0, 0, 96, 128, 100, 100, 200);
+    //_player = AnimatedSprite(graphics, "..//content//spritesheet//Roguelike//roguelikeChar_transparent.png", 0, 0, 16, 16, 100, 100, 100);
+    _player.setUpAnimations();
+    _player.playAnimation("RunRight");
 
     while (running) {
         input.beginNewFrame();
@@ -79,5 +83,5 @@ void Game::draw(Graphics &graphics) {
 }
 
 void Game::update(float elapsedTime) {
-
+    _player.update(elapsedTime);
 }
