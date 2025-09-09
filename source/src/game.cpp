@@ -3,6 +3,7 @@ Holds information for the main game loop
 */
 
 #include <SDL3/SDL.h>
+#include <SDL3_image/SDL_image.h>
 #include <algorithm>
 #include <iostream>
 #include "game.h"
@@ -32,6 +33,7 @@ void Game::gameLoop() {
     SDL_Event event;
     bool running = true;
     int LAST_UPDATE_TIME = SDL_GetTicks(); // Get the current time in milliseconds
+    _player = Sprite(graphics, "..\\content\\spritesheet\\roguelikeChar_transparent.png", 0, 0, 16, 16, 0, 0);
 
     while (running) {
         input.beginNewFrame();
@@ -59,16 +61,21 @@ void Game::gameLoop() {
         if (input.wasKeyPressed(SDL_SCANCODE_ESCAPE)) {
             running = false;
         }
-
+        // Calculate elapsed time
         const int CURRENT_TIME_MS = SDL_GetTicks();
         int ELAPSED_TIME_MS = CURRENT_TIME_MS - LAST_UPDATE_TIME;
         update(min(ELAPSED_TIME_MS, MAX_FRAME_TIME)); // Convert ms to seconds
         LAST_UPDATE_TIME = CURRENT_TIME_MS;
+        
+        draw(graphics);
+
     }
 }
 
 void Game::draw(Graphics &graphics) {
-
+    graphics.clear(); 
+    _player.draw(graphics, 100, 100);
+    graphics.flip();
 }
 
 void Game::update(float elapsedTime) {
