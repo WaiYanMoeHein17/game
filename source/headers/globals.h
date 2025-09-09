@@ -2,8 +2,8 @@
 #define GLOBALS_H
 
 namespace globals {
-    const int SCREEN_WIDTH = 800;
-    const int SCREEN_HEIGHT = 600;
+    const int SCREEN_WIDTH = 1820;
+    const int SCREEN_HEIGHT = 980;
     const float SPRITE_SCALE = 1.0f;
 }
 

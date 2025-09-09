@@ -6,7 +6,7 @@
 using namespace std;
 
 int main(int argc, char* argv[]) {
-    Graphics graphics;
+    //Graphics graphics;
     Game game; 
     /*while (true) {
         // Main loop

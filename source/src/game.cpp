@@ -11,6 +11,8 @@ Holds information for the main game loop
 #include "input.h"
 #include "animated_sprite.h"
 #include "player.h"
+#include "level.h"
+#include "globals.h"
 
 using namespace std;
 
@@ -36,6 +38,7 @@ void Game::gameLoop() {
     bool running = true;
     int LAST_UPDATE_TIME = SDL_GetTicks(); // Get the current time in milliseconds
     _player = Player(graphics, 100, 100);
+    _level = Level("level1", Vector2D(0,0), graphics);
     //_player = AnimatedSprite(graphics, "..//content//spritesheet//Roguelike//roguelikeChar_transparent.png", 0, 0, 16, 16, 100, 100, 100);
     //_player.setUpAnimations();
     //_player.playAnimation("RunRight");
@@ -78,12 +81,20 @@ void Game::gameLoop() {
             _player.moveRight();
             isMoving = true;
         }
+        if (input.isKeyHeld(SDL_SCANCODE_A) && input.isKeyHeld(SDL_SCANCODE_D)) {
+            _player.stopMovingX();
+            isMoving = false; // Cancel out movement if both keys are held
+        }
         if (input.isKeyHeld(SDL_SCANCODE_W)) {
             _player.moveUp();
             isMoving = true;
         }
         if (input.isKeyHeld(SDL_SCANCODE_S)) {
             _player.moveDown();
+            isMoving = true;
+        }
+        if (input.wasKeyPressed(SDL_SCANCODE_SPACE)) {
+            _player.jump();
             isMoving = true;
         }
         
@@ -110,11 +121,19 @@ void Game::gameLoop() {
 }
 
 void Game::draw(Graphics &graphics) {
-    graphics.clear(); 
-    _player.draw(graphics);
-    graphics.flip();
+    graphics.clear(); // Clear to black first
+    
+    //cout << "Drawing level..." << endl; // Debug output
+    _level.draw(graphics); // Draw background FIRST
+    
+    //cout << "Drawing player..." << endl; // Debug output  
+    _player.draw(graphics); // Draw player ON TOP
+    
+    graphics.flip(); // Present to screen
 }
 
 void Game::update(float elapsedTime) {
     _player.update(elapsedTime);
+    _level.update(static_cast<int>(elapsedTime));
+
 }

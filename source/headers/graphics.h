@@ -3,9 +3,8 @@
 
 #include <SDL3/SDL.h>
 #include <SDL3_image/SDL_image.h>
-#include <string>
 #include <map>
-
+#include <string>
 
 using namespace std; 
 
@@ -13,31 +12,29 @@ struct SDL_Window;
 struct SDL_Renderer;
 
 class Graphics {
-    public:
-        Graphics();
-        ~Graphics();
+public:
+    Graphics();
+    ~Graphics();
+    void clear();
+    void flip();
+    void blitSurface(SDL_Texture* source, SDL_FRect* sourceRectangle, SDL_FRect* destinationRectangle);
+    void blitSurfaceFlipped(SDL_Texture* source, SDL_FRect* sourceRectangle, SDL_FRect* destinationRectangle, bool flipHorizontal = false);
+    
+    // For loading raw surfaces (backgrounds, one-time use)
+    SDL_Surface* loadSurface(const string &filePath);
+    
+    // For loading and caching textures (sprites, reused multiple times)
+    SDL_Texture* loadTexture(const string &filePath);
 
-        /*
-        Loads an image into the _spriteSheets map and returns a pointer to the SDL_Surface. As a result of this, the image can be accessed later without needing to load it again.
-        */
-        SDL_Surface* loadImage(const string &filePath);
-        
-        /*
-        Draws a portion of the source surface to the destination rectangle on the window.
-        */
-        void blitSurface(SDL_Texture* source, SDL_FRect* sourceRectangle, SDL_FRect* destinationRectangle);
+    SDL_Surface* loadImage(const string &filePath);
 
-        void flip(); // Update the screen with any rendering performed since the previous call
+    SDL_Renderer* getRenderer() const;
 
-        void clear(); // Clear the screen
-
-        SDL_Renderer* getRenderer() const; // Getter for the renderer
-
-    private:
-        SDL_Window* window;
-        SDL_Renderer* renderer;
-
-        map<string, SDL_Surface*> _spriteSheets;
+private:
+    SDL_Window* window;
+    SDL_Renderer* renderer;
+    map<string, SDL_Texture*> _spriteSheets; // Cached textures for sprites
+    map<string, SDL_Surface*> _surfaces; // Cached surfaces for one-time use
 };
 
 #endif // GRAPHICS_H

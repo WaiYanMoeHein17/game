@@ -1,10 +1,12 @@
 #ifndef GAME_H
 #define GAME_H
 #include <SDL3/SDL.h>
+#include <SDL3_image/SDL_image.h>
 #include <string>
 #include "sprite.h"
 #include "animated_sprite.h"
 #include "player.h"
+#include "level.h"
 
 using namespace std;
 
@@ -20,5 +22,7 @@ class Game {
         void update(float elapsedTime);
 
         Player _player;
+
+        Level _level;
 }; 
 #endif // GAME_H

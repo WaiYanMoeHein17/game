@@ -8,6 +8,10 @@ using namespace std;
 namespace player_constants {
     const float WALK_SPEED = 0.2f; // Speed at which the player moves
     const float SPRINT_SPEED = 0.4f; // Speed at which the player sprints
+    const float GRAVITY = 0.001f; // Gravity affecting the player
+    const float AIR_FRICTION = 0.0005f; // Air resistance affecting the player
+    const float GROUND_FRICTION = 0.0010f; // Friction when on the ground
+    const float JUMP_FORCE = -0.5f; // Initial jump velocity
 }
 
 Player::Player() {
@@ -16,7 +20,7 @@ Player::Player() {
 
 Player::Player(Graphics &graphics, float x, float y) 
     : AnimatedSprite(graphics, "..//content//spritesheet//Male adventurer//Tilesheet//character_maleAdventurer_sheet.png", 0, 0, 98, 126, x, y, 100) {
-    graphics.loadImage("..//content//spritesheet//Male adventurer//Tilesheet//character_maleAdventurer_sheet.png");
+    graphics.loadTexture("..//content//spritesheet//Male adventurer//Tilesheet//character_maleAdventurer_sheet.png");
         
     // Initialize movement variables
     _dx = 0;
@@ -29,15 +33,19 @@ Player::Player(Graphics &graphics, float x, float y)
 }
 
 void Player::setUpAnimations() {
-    // I need to properly set up the animations here
-    addAnimation(8, 0, 0, "RunRight", 98, 126, Vector2D(0, 0));
-    addAnimation(8, 0, 126, "RunLeft", 98, 126, Vector2D(0, 0));
-    addAnimation(1, 0, 252, "IdleRight", 98, 126, Vector2D(0, 0));
-    addAnimation(1, 0, 378, "IdleLeft", 98, 126, Vector2D(0, 0));
-    addAnimation(1, 0, 504, "JumpRight", 98, 126, Vector2D(0, 0));
-    addAnimation(1, 0, 630, "JumpLeft", 98, 126, Vector2D(0, 0));
-    addAnimation(3, 0, 0, "RunUp", 98, 126, Vector2D(0, 0));
-    addAnimation(3, 0, 126, "RunDown", 98, 126, Vector2D(0, 0));
+    // Walk animation: walk0-walk7 at y=512
+    addAnimation(8, 0, 512, "WalkRight", 96, 128, Vector2D(0, 0));
+    addAnimation(8, 0, 512, "WalkLeft", 96, 128, Vector2D(0, 0));
+    
+    // Run animation: run0-run2 at y=256, starting at x=576
+    addAnimation(3, 576, 256, "RunRight", 96, 128, Vector2D(0, 0));
+    addAnimation(3, 576, 256, "RunLeft", 96, 128, Vector2D(0, 0));
+    
+    // Idle animation: idle at x=0, y=0
+    addAnimation(1, 0, 0, "IdleRight", 96, 128, Vector2D(0, 0));
+    addAnimation(1, 0, 0, "IdleLeft", 96, 128, Vector2D(0, 0));
+
+    addAnimation(2, 96, 0, "Jump", 96, 128, Vector2D(0, 0));
 }
 
 void Player::animationDone(string currentAnimation) {
@@ -59,8 +67,8 @@ void Player::update(float elapsedTime) {
         float newX = _x + normalizedDx * getCurrentSpeed() * elapsedTime;
         float newY = _y + normalizedDy * getCurrentSpeed() * elapsedTime;
         
-        int spriteWidth = 98;
-        int spriteHeight = 126;
+        int spriteWidth = 96;
+        int spriteHeight = 128;
         
         // Separate boundary checking for X and Y axes
         // Only update X if it's within bounds
@@ -98,46 +106,83 @@ void Player::draw(Graphics &graphics) {
 }
 
 void Player::moveLeft() {
-    cout << "Moving left..." << endl;
-    _dx -= 1.0f;  // Use -1 to 1 range, normalize in update
+    _dx -= 1.0f;
     _facing = LEFT;
-    cout << "About to play RunLeft animation..." << endl;
-    playAnimation("RunLeft");
-    cout << "RunLeft animation started." << endl;
+    setFlipped(true);
+    // Choose animation based on sprint state
+    if (_isSprinting) {
+        playAnimation("RunLeft");
+    } else {
+        playAnimation("WalkLeft");
+    }
 }
 
 void Player::moveRight() {
     _dx += 1.0f;
     _facing = RIGHT;
-    playAnimation("RunRight");
+    setFlipped(false);
+    // Choose animation based on sprint state
+    if (_isSprinting) {
+        playAnimation("RunRight");
+    } else {
+        playAnimation("WalkRight");
+    }
 }
 
 void Player::moveUp() {
     _dy -= 1.0f;
-    // Keep current facing for animation
+    
+    // Keep current facing for animation, but choose walk/run based on sprint
     if (_facing == RIGHT) {
-        playAnimation("RunRight");
+        if (_isSprinting) {
+            playAnimation("RunRight");
+        } else {
+            playAnimation("WalkRight");
+        }
     } else {
-        playAnimation("RunLeft");
+        setFlipped(true);
+        if (_isSprinting) {
+            playAnimation("RunLeft");
+        } else {
+            playAnimation("WalkLeft");
+        }
     }
 }
 
 void Player::moveDown() {
     _dy += 1.0f;
-    // Keep current facing for animation
+    
+    // Keep current facing for animation, but choose walk/run based on sprint
     if (_facing == RIGHT) {
-        playAnimation("RunRight");
+        if (_isSprinting) {
+            playAnimation("RunRight");
+        } else {
+            playAnimation("WalkRight");
+        }
     } else {
-        playAnimation("RunLeft");
+        setFlipped(true);
+        if (_isSprinting) {
+            playAnimation("RunLeft");
+        } else {
+            playAnimation("WalkLeft");
+        }
     }
+}
+
+void Player::jump() {
+    _dx = 0;
+    _dy = 0;
+    playAnimation("Jump");
 }
 
 void Player::stopMovingX() {
     _dx = 0;
     if (_dy == 0) { // Only go to idle if not moving vertically either
         if (_facing == RIGHT) {
+            setFlipped(false);
             playAnimation("IdleRight");
         } else if (_facing == LEFT) {
+            setFlipped(true);
             playAnimation("IdleLeft");
         }
     }
@@ -147,8 +192,10 @@ void Player::stopMovingY() {
     _dy = 0;
     if (_dx == 0) { // Only go to idle if not moving horizontally either
         if (_facing == RIGHT) {
+            setFlipped(false);
             playAnimation("IdleRight");
         } else if (_facing == LEFT) {
+            setFlipped(true);
             playAnimation("IdleLeft");
         }
     }
@@ -158,14 +205,34 @@ void Player::stop() {
     _dx = 0;
     _dy = 0;
     if (_facing == RIGHT) {
+        setFlipped(false);
         playAnimation("IdleRight");
     } else if (_facing == LEFT) {
+        setFlipped(true);
         playAnimation("IdleLeft");
     }
 }
 
 void Player::setSprinting(bool sprinting) {
+    bool wasSprintingBefore = _isSprinting;
     _isSprinting = sprinting;
+    
+    // If sprint state changed and we're moving, update animation
+    if (wasSprintingBefore != _isSprinting && (_dx != 0 || _dy != 0)) {
+        if (_facing == RIGHT) {
+            if (_isSprinting) {
+                playAnimation("RunRight");
+            } else {
+                playAnimation("WalkRight");
+            }
+        } else {
+            if (_isSprinting) {
+                playAnimation("RunLeft");
+            } else {
+                playAnimation("WalkLeft");
+            }
+        }
+    }
 }
 
 bool Player::isSprinting() const {

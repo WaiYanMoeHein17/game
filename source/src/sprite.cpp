@@ -19,7 +19,7 @@ Sprite::Sprite(Graphics& graphics, const string& filePath, int sourceX, int sour
     _sourceRect.w = width;
     _sourceRect.h = height;
 
-    SDL_Surface* surface = graphics.loadImage(filePath);
+    SDL_Surface* surface = graphics.loadSurface(filePath);
     if (surface == nullptr) {
         cerr << "Failed to load image: " << filePath << endl;
         cout << "Failed to load image: " << filePath << endl;

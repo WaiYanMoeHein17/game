@@ -19,6 +19,7 @@ public:
     void moveRight();
     void moveUp();
     void moveDown();
+    void jump();
     void stopMovingX();
     void stopMovingY();
     void stop();

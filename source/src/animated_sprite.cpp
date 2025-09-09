@@ -20,6 +20,7 @@ AnimatedSprite::AnimatedSprite(Graphics& graphics, const string& filePath, int s
     _currentAnimationOnce = false;
     _timeElapsed = 0;
     _currentAnimation = "";
+    _flipped = false; 
 }
 
 void AnimatedSprite::addAnimation(int frames, int x, int y, string name, int width, int height, Vector2D offset) {
@@ -89,8 +90,17 @@ void AnimatedSprite::draw(Graphics& graphics, int x, int y) {
         destinationRect.h = _sourceRect.h * globals::SPRITE_SCALE;
 
         SDL_FRect sourceRect = _animations[_currentAnimation][_currentFrame];
-        graphics.blitSurface(_spriteSheet, &sourceRect, &destinationRect);
+        //graphics.blitSurface(_spriteSheet, &sourceRect, &destinationRect);
+        graphics.blitSurfaceFlipped(_spriteSheet, &sourceRect, &destinationRect, _flipped);
     }
+}
+
+void AnimatedSprite::setFlipped(bool flipped) {
+    _flipped = flipped;
+}
+
+bool AnimatedSprite::isFlipped() const {
+    return _flipped;
 }
 
 /*void AnimatedSprite::setUpAnimations() {

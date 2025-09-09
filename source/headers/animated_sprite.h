@@ -40,6 +40,9 @@ class AnimatedSprite : public Sprite {
         void setVisible(bool visible);
         bool isVisible() const;
 
+        void setFlipped(bool flipped);
+        bool isFlipped() const;
+
         /*
         Called when an animation is finished playing.
         */
@@ -56,6 +59,7 @@ class AnimatedSprite : public Sprite {
         int _currentFrame; // Index of the current frame in the animation
         float _timeElapsed; // Time elapsed since the last frame update
         bool _visible; // Whether the sprite is visible
+        bool _flipped; // Whether the sprite is flipped horizontally
 
         //void addAnimation(int frames, int x, int y, string name, int width, int height, Vector2D offset); // Helper method to add an animation
         //void resetAnimation(); // Resets the current animation to the first frame
