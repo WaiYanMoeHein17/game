@@ -122,9 +122,9 @@ void Game::gameLoop() {
 
 void Game::draw(Graphics &graphics) {
     graphics.clear(); // Clear to black first
-    
+
     //cout << "Drawing level..." << endl; // Debug output
-    _level.draw(graphics); // Draw background FIRST
+    _level.draw2(graphics); // Draw background FIRST
     
     //cout << "Drawing player..." << endl; // Debug output  
     _player.draw(graphics); // Draw player ON TOP

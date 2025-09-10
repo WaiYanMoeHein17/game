@@ -11,35 +11,24 @@ Graphics::Graphics() {
 }
 
 Graphics::~Graphics() {
-    // Clean up all cached textures
-    for (auto& pair : _spriteSheets) {
-        if (pair.second) {
-            SDL_DestroyTexture(pair.second);
-        }
-    }
-    _spriteSheets.clear();
-    
-    if (renderer) {
-        SDL_DestroyRenderer(renderer);
-    }
-    if (window) {
-        SDL_DestroyWindow(window);
-    }
+    SDL_DestroyWindow(window);
+    SDL_DestroyRenderer(renderer);
 }
 
-SDL_Surface* Graphics::loadImage(const string &filePath) {
+SDL_Texture* Graphics::loadImage(const string &filePath) {
     // Return cached surface if it exists
     if (this->_surfaces.count(filePath) == 0) {
-		this->_surfaces[filePath] = IMG_Load(filePath.c_str());
+		this->_surfaces[filePath] = IMG_LoadTexture(renderer, filePath.c_str());
 	}
-	return this->_surfaces[filePath];
+	return _surfaces[filePath];
 }
 
 void Graphics::blitSurface(SDL_Texture* source, SDL_FRect* sourceRectangle, SDL_FRect* destinationRectangle) {
     // Make sure this uses SDL_RenderTexture, not SDL_BlitSurface
     if (SDL_RenderTexture(renderer, source, sourceRectangle, destinationRectangle) != 0) {
-        cout << "Failed to render texture: " << SDL_GetError() << endl;
+        //cout << "Failed to render texture: " << SDL_GetError() << endl;
     }
+    SDL_RenderTexture(renderer, source, sourceRectangle, destinationRectangle);
 }
 
 void Graphics::blitSurfaceFlipped(SDL_Texture* source, SDL_FRect* sourceRectangle, SDL_FRect* destinationRectangle, bool flipHorizontal) {

@@ -26,7 +26,7 @@ public:
     // For loading and caching textures (sprites, reused multiple times)
     SDL_Texture* loadTexture(const string &filePath);
 
-    SDL_Surface* loadImage(const string &filePath);
+    SDL_Texture* loadImage(const string &filePath);
 
     SDL_Renderer* getRenderer() const;
 
@@ -34,7 +34,7 @@ private:
     SDL_Window* window;
     SDL_Renderer* renderer;
     map<string, SDL_Texture*> _spriteSheets; // Cached textures for sprites
-    map<string, SDL_Surface*> _surfaces; // Cached surfaces for one-time use
+    map<string, SDL_Texture*> _surfaces; // Cached surfaces for one-time use
 };
 
 #endif // GRAPHICS_H
