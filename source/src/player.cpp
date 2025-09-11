@@ -9,6 +9,7 @@ namespace player_constants {
     const float WALK_SPEED = 0.2f; // Speed at which the player moves
     const float SPRINT_SPEED = 0.4f; // Speed at which the player sprints
     const float GRAVITY = 0.001f; // Gravity affecting the player
+    const float GRAVITY_CAP = 0.5f; // Maximum downward speed
     const float AIR_FRICTION = 0.0005f; // Air resistance affecting the player
     const float GROUND_FRICTION = 0.0010f; // Friction when on the ground
     const float JUMP_FORCE = -0.5f; // Initial jump velocity
@@ -27,6 +28,7 @@ Player::Player(Graphics &graphics, float x, float y)
     _dy = 0;
     _facing = RIGHT;
     _isSprinting = false;
+    _grounded = false; 
 
     setUpAnimations();
     playAnimation("IdleRight");
@@ -55,6 +57,32 @@ void Player::animationDone(string currentAnimation) {
 }
 
 void Player::update(float elapsedTime) {
+    // applying gravity
+    /*if (!_grounded) {
+        _dy += player_constants::GRAVITY * elapsedTime;
+        if (_dy > player_constants::GRAVITY_CAP) {
+            _dy = player_constants::GRAVITY_CAP; // Cap downward speed
+        }
+        
+        // Apply air friction
+        if (_dx > 0) {
+            _dx -= player_constants::AIR_FRICTION * elapsedTime;
+            if (_dx < 0) _dx = 0;
+        } else if (_dx < 0) {
+            _dx += player_constants::AIR_FRICTION * elapsedTime;
+            if (_dx > 0) _dx = 0;
+        }
+    } else {
+        // Apply ground friction
+        if (_dx > 0) {
+            _dx -= player_constants::GROUND_FRICTION * elapsedTime;
+            if (_dx < 0) _dx = 0;
+        } else if (_dx < 0) {
+            _dx += player_constants::GROUND_FRICTION * elapsedTime;
+            if (_dx > 0) _dx = 0;
+        }
+    }*/ 
+
     AnimatedSprite::update(elapsedTime);
     
     // Normalize diagonal movement so it's not faster than cardinal movement
@@ -103,6 +131,14 @@ void Player::update(float elapsedTime) {
 
 void Player::draw(Graphics &graphics) {
     AnimatedSprite::draw(graphics, _x, _y);
+}
+
+const float Player::getX() const {
+    return _x;
+}   
+
+const float Player::getY() const {
+    return _y;
 }
 
 void Player::moveLeft() {

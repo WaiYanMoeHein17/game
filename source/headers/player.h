@@ -13,6 +13,8 @@ public:
     void animationDone(string currentAnimation);
     void update(float elapsedTime);
     void draw(Graphics &graphics);
+    const float getX() const; 
+    const float getY() const;
     
     // Movement methods
     void moveLeft();
@@ -34,6 +36,7 @@ private:
     float _dx, _dy; // Velocity
     Direction _facing;
     bool _isSprinting;
+    bool _grounded; // true if on ground, false if in air
     
     float getCurrentSpeed() const;
 };

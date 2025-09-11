@@ -5,6 +5,7 @@
 #include <vector>
 #include "tile.h"
 #include "globals.h"
+#include "rectangle.h"
 
 class Graphics;
 struct SDL_Texture;
@@ -21,6 +22,8 @@ class Level {
         void update(int elapsedTime);
         void draw1(Graphics &graphics);
         void draw2(Graphics &graphics);
+
+        vector<Rectangle> checkTileCollisions(const Rectangle &other); 
     protected:
     private:
         string _mapName; 
@@ -31,6 +34,7 @@ class Level {
 
         vector<Tile> _tileList;
         vector<Tileset> _tilesets;
+        vector<Rectangle> _collisionRects;
 
         
         /*

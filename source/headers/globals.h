@@ -5,6 +5,28 @@ namespace globals {
     const int SCREEN_WIDTH = 1820;
     const int SCREEN_HEIGHT = 980;
     const float SPRITE_SCALE = 1.0f;
+
+}
+
+namespace sides {
+    enum Side {
+        TOP,
+        BOTTOM,
+        LEFT,
+        RIGHT,
+        NONE
+    };
+
+    const inline Side getOppositeSide(Side side) {
+        switch (side) {
+            case TOP: return BOTTOM;
+            case BOTTOM: return TOP;
+            case LEFT: return RIGHT;
+            case RIGHT: return LEFT;
+            default: return NONE;
+        }
+    }
+
 }
 
 enum Direction {

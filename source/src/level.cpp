@@ -290,6 +290,16 @@ void Level::update(int elapsedTime) {
     // Update level state if needed
 }
 
+vector<Rectangle> Level::checkTileCollisions(const Rectangle &other) {
+    vector<Rectangle> collidingRects; 
+    for (auto& rect : _collisionRects) {
+        if (other.collidesWith(rect)) {
+            collidingRects.push_back(rect);
+        }
+    }
+    return collidingRects;
+}
+
 void Level::draw2(Graphics &graphics) {
     for (auto& tile : _tileList) {
         tile.draw(graphics);
