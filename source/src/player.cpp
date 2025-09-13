@@ -13,7 +13,7 @@ namespace player_constants {
     const float GRAVITY_CAP = 0.5f; // Maximum downward speed
     const float AIR_FRICTION = 0.0005f; // Air resistance affecting the player
     const float GROUND_FRICTION = 0.0010f; // Friction when on the ground
-    const float JUMP_FORCE = -0.5f; // Initial jump velocity
+    const float JUMP_FORCE = 0.5f; // Initial jump velocity
 }
 
 Player::Player() {
@@ -98,97 +98,113 @@ void Player::update(float elapsedTime) {
 void Player::update(float elapsedTime, Level& level) {
     AnimatedSprite::update(elapsedTime);
     
-    // Normalize diagonal movement so it's not faster than cardinal movement
-    float magnitude = sqrt(_dx * _dx + _dy * _dy);
-    if (magnitude > 0) {
-        float normalizedDx = _dx / magnitude;
-        float normalizedDy = _dy / magnitude;
-        
-        // Calculate movement deltas
-        float deltaX = normalizedDx * getCurrentSpeed() * elapsedTime;
-        float deltaY = normalizedDy * getCurrentSpeed() * elapsedTime;
-        
-        int spriteWidth = 96;
-        int spriteHeight = 128;
-        
-        // Store original position
-        float originalX = _x;
-        float originalY = _y;
-        
-        // Try horizontal movement first
-        if (deltaX != 0) {
-            float newX = _x + deltaX;
-            
-            // Check screen boundaries
-            if (newX >= 0 && newX + spriteWidth <= globals::SCREEN_WIDTH) {
-                // Temporarily move to new X position
-                _x = newX;
-                
-                // Update bounding box for collision check
-                _boundingBox = Rectangle(_x, _y, spriteWidth * globals::SPRITE_SCALE, spriteHeight * globals::SPRITE_SCALE);
-                
-                // Check for level collisions
-                vector<Rectangle> collisions = level.checkTileCollisions(_boundingBox);
-                if (collisions.size() > 0) {
-                    // Collision detected - revert X movement
-                    _x = originalX;
-                    cout << "Horizontal collision prevented!" << endl;
-                } else {
-                    // No collision - keep the new X position
-                    cout << "Horizontal movement OK" << endl;
-                }
-            } else {
-                // Hit screen boundary - clamp to boundary
-                if (newX < 0) {
-                    _x = 0;
-                } else if (newX + spriteWidth > globals::SCREEN_WIDTH) {
-                    _x = globals::SCREEN_WIDTH - spriteWidth;
-                }
-            }
+    // Apply gravity if not grounded
+    if (!_grounded) {
+        _dy += player_constants::GRAVITY * elapsedTime;
+        if (_dy > player_constants::GRAVITY_CAP) {
+            _dy = player_constants::GRAVITY_CAP;
         }
-        
-        // Try vertical movement
-        if (deltaY != 0) {
-            float newY = _y + deltaY;
-            
-            // Check screen boundaries
-            if (newY >= 0 && newY + spriteHeight <= globals::SCREEN_HEIGHT) {
-                // Store current Y for potential revert
-                float currentY = _y;
-                
-                // Temporarily move to new Y position
-                _y = newY;
-                
-                // Update bounding box for collision check
-                _boundingBox = Rectangle(_x, _y, spriteWidth * globals::SPRITE_SCALE, spriteHeight * globals::SPRITE_SCALE);
-                
-                // Check for level collisions
-                vector<Rectangle> collisions = level.checkTileCollisions(_boundingBox);
-                if (collisions.size() > 0) {
-                    // Collision detected - revert Y movement
-                    _y = currentY;
-                    cout << "Vertical collision prevented!" << endl;
-                } else {
-                    // No collision - keep the new Y position
-                    cout << "Vertical movement OK" << endl;
-                }
-            } else {
-                // Hit screen boundary - clamp to boundary
-                if (newY < 0) {
-                    _y = 0;
-                } else if (newY + spriteHeight > globals::SCREEN_HEIGHT) {
-                    _y = globals::SCREEN_HEIGHT - spriteHeight;
-                }
-            }
+    }
+
+    // Apply friction for horizontal movement
+    if (_grounded) {
+        if (_dx > 0) {
+            _dx -= player_constants::GROUND_FRICTION * elapsedTime;
+            if (_dx < 0) _dx = 0;
+        } else if (_dx < 0) {
+            _dx += player_constants::GROUND_FRICTION * elapsedTime;
+            if (_dx > 0) _dx = 0;
         }
-        
-        // Final bounding box update
-        _boundingBox = Rectangle(_x, _y, spriteWidth * globals::SPRITE_SCALE, spriteHeight * globals::SPRITE_SCALE);
+    } else {
+        if (_dx > 0) {
+            _dx -= player_constants::AIR_FRICTION * elapsedTime;
+            if (_dx < 0) _dx = 0;
+        } else if (_dx < 0) {
+            _dx += player_constants::AIR_FRICTION * elapsedTime;
+            if (_dx > 0) _dx = 0;
+        }
     }
     
-    // Reset velocity for next frame
-    _dx = 0;
-    _dy = 0;
+    // Store original position for collision detection
+    float originalX = _x;
+    float originalY = _y;
+    
+    // Apply horizontal movement
+    if (_dx != 0) {
+        float newX = _x + _dx * elapsedTime;
+        
+        // Check screen boundaries
+        if (newX >= 0 && newX + 96 <= globals::SCREEN_WIDTH) {
+            _x = newX;
+            _boundingBox = Rectangle(_x, _y, 96 * globals::SPRITE_SCALE, 128 * globals::SPRITE_SCALE);
+            
+            vector<Rectangle> collisions = level.checkTileCollisions(_boundingBox);
+            if (collisions.size() > 0) {
+                _x = originalX; // Revert horizontal movement
+                _dx = 0; // Stop horizontal velocity
+                cout << "Horizontal collision!" << endl;
+            }
+        } else {
+            // Clamp to screen boundaries
+            if (newX < 0) _x = 0;
+            else if (newX + 96 > globals::SCREEN_WIDTH) _x = globals::SCREEN_WIDTH - 96;
+            _dx = 0; // Stop at boundary
+        }
+    }
+    
+    // Apply vertical movement (this is where gravity takes effect)
+    if (_dy != 0) {
+        float newY = _y + _dy * elapsedTime;
+        
+        // Check screen boundaries
+        if (newY >= 0 && newY + 128 <= globals::SCREEN_HEIGHT) {
+            _y = newY;
+            _boundingBox = Rectangle(_x, _y, 96 * globals::SPRITE_SCALE, 128 * globals::SPRITE_SCALE);
+            
+            vector<Rectangle> collisions = level.checkTileCollisions(_boundingBox);
+            if (collisions.size() > 0) {
+                // Handle collision - determine if landing or hitting ceiling
+                for (const auto& collision : collisions) {
+                    if (_dy > 0) {
+                        // Falling down - landed on something
+                        _y = collision.getTop() - 128; // Land on top of collision object
+                        _dy = 0;
+                        _grounded = true;
+                        cout << "Landed! Grounded = true" << endl;
+                    } else if (_dy < 0) {
+                        // Moving up - hit ceiling
+                        _y = collision.getTop() + collision.getHeight(); // Position below collision object
+                        _dy = 0; // Stop upward movement
+                        cout << "Hit ceiling!" << endl;
+                    }
+                }
+            } else {
+                // No collision - check if we just left the ground
+                if (_grounded && _dy > 0) {
+                    _grounded = false;
+                    cout << "Left ground! Grounded = false" << endl;
+                }
+            }
+        } else {
+            // Hit screen boundaries
+            if (newY < 0) {
+                _y = 0;
+                _dy = 0;
+            } else if (newY + 128 > globals::SCREEN_HEIGHT) {
+                _y = globals::SCREEN_HEIGHT - 128;
+                _dy = 0;
+                _grounded = true;
+            }
+        }
+    }
+    
+    // Final bounding box update
+    _boundingBox = Rectangle(_x, _y, 96 * globals::SPRITE_SCALE, 128 * globals::SPRITE_SCALE);
+    
+    // DON'T reset velocity here - let physics handle it!
+    // Remove these lines:
+    // _dx = 0;
+    // _dy = 0;
 }
 
 void Player::draw(Graphics &graphics) {
@@ -204,7 +220,7 @@ const float Player::getY() const {
 }
 
 void Player::moveLeft() {
-    _dx -= 1.0f;
+    _dx = -getCurrentSpeed(); // Move left at current speed
     _facing = LEFT;
     setFlipped(true);
     // Choose animation based on sprint state
@@ -216,7 +232,7 @@ void Player::moveLeft() {
 }
 
 void Player::moveRight() {
-    _dx += 1.0f;
+    _dx = getCurrentSpeed(); // Move right at current speed
     _facing = RIGHT;
     setFlipped(false);
     // Choose animation based on sprint state
@@ -227,7 +243,7 @@ void Player::moveRight() {
     }
 }
 
-void Player::moveUp() {
+/*void Player::moveUp() {
     _dy -= 1.0f;
     
     // Keep current facing for animation, but choose walk/run based on sprint
@@ -265,17 +281,38 @@ void Player::moveDown() {
             playAnimation("WalkLeft");
         }
     }
-}
+}*/ 
 
 void Player::jump() {
-    _dx = 0;
-    _dy = 0;
+    if (!_grounded) {
+        cout << "Can't jump, not grounded!" << endl;
+        return; // Can't jump if not grounded, cannot double jump
+    }
+    else if (_isSprinting) {
+        // if player is sprinting, carry speed throughout the whole jump even if player stops pressing movement keys
+        if (_facing == RIGHT) {
+            _dx = player_constants::SPRINT_SPEED;
+        } else {
+            _dx = -player_constants::SPRINT_SPEED;
+        }
+    } else {
+        // if player is walking or standing still, carry speed throughout the whole jump even if player stops pressing movement keys
+        if (_facing == RIGHT) {
+            _dx = player_constants::WALK_SPEED;
+        } else {
+            _dx = -player_constants::WALK_SPEED;
+        }
+    }
+    _dy = -player_constants::JUMP_FORCE; // Apply jump force
+    _grounded = false; // Now in the air
     playAnimation("Jump");
+    //}
+    
 }
 
 void Player::stopMovingX() {
     _dx = 0;
-    if (_dy == 0) { // Only go to idle if not moving vertically either
+    if (_dy == 0 || _grounded) { // Only go to idle if not moving vertically either
         if (_facing == RIGHT) {
             setFlipped(false);
             playAnimation("IdleRight");
@@ -366,6 +403,10 @@ void Player::setSprinting(bool sprinting) {
 
 bool Player::isSprinting() const {
     return _isSprinting;
+}
+
+bool Player::isGrounded() const {
+    return _grounded;
 }
 
 float Player::getCurrentSpeed() const {

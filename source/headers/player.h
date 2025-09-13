@@ -33,6 +33,8 @@ public:
     void setSprinting(bool sprinting);
     bool isSprinting() const;
     
+    bool isGrounded() const; // New method to check if player is on the ground
+    
     Direction getFacing() const;
 
 private:

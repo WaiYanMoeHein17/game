@@ -71,20 +71,21 @@ void Game::gameLoop() {
         }
 
         // Handle movement - use separate if statements instead of else if
-        bool isMoving = false;
+        bool isMovingHorizontally = false;
+        bool isMovingVertically = false;
         
         if (input.isKeyHeld(SDL_SCANCODE_A)) {
             _player.moveLeft();
-            isMoving = true;
+            isMovingHorizontally = true;
         }
         if (input.isKeyHeld(SDL_SCANCODE_D)) {
             _player.moveRight();
-            isMoving = true;
+            isMovingHorizontally = true;
         }
-        if (input.isKeyHeld(SDL_SCANCODE_A) && input.isKeyHeld(SDL_SCANCODE_D)) {
+        /*if (input.isKeyHeld(SDL_SCANCODE_A) && input.isKeyHeld(SDL_SCANCODE_D)) {
             _player.stopMovingX();
             isMoving = false; // Cancel out movement if both keys are held
-        }
+        } 
         if (input.isKeyHeld(SDL_SCANCODE_W)) {
             _player.moveUp();
             isMoving = true;
@@ -92,23 +93,31 @@ void Game::gameLoop() {
         if (input.isKeyHeld(SDL_SCANCODE_S)) {
             _player.moveDown();
             isMoving = true;
-        }
+        }*/ 
         if (input.wasKeyPressed(SDL_SCANCODE_SPACE)) {
+            cout << "Space pressed, jumping!" << endl;
             _player.jump();
-            isMoving = true;
+            isMovingVertically = true;
+
         }
         
         // Handle sprinting
-        if (input.isKeyHeld(SDL_SCANCODE_LSHIFT)) {
-            _player.setSprinting(true);
-        } else {
-            _player.setSprinting(false);
+        if (_player.isGrounded()) {  // Only change sprint state when on ground
+            if (input.isKeyHeld(SDL_SCANCODE_LSHIFT)) {
+                _player.setSprinting(true);
+            } else {
+                _player.setSprinting(false);
+            }
+        }
+
+        if (!isMovingHorizontally) {
+            _player.stopMovingX();
         }
         
         // Stop movement if no movement keys are pressed
-        if (!isMoving) {
+        /*if (!isMoving) {
             _player.stop();
-        }
+        }*/ 
 
         // Calculate elapsed time
         const int CURRENT_TIME_MS = SDL_GetTicks();
@@ -135,8 +144,8 @@ void Game::draw(Graphics &graphics) {
 void Game::update(float elapsedTime) {
     _player.update(elapsedTime, _level);
     _level.update(static_cast<int>(elapsedTime));
-    vector<Rectangle> others; 
+    /*vector<Rectangle> others; 
     if ((others = _level.checkTileCollisions(_player.getBoundingBox())).size() > 0) {
         _player.handleTileCollisions(others);
-    }
+    }*/ 
 }
