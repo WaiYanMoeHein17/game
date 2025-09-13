@@ -6,6 +6,7 @@
 #include "tile.h"
 #include "globals.h"
 #include "rectangle.h"
+#include "tinyxml2.h"
 
 class Graphics;
 struct SDL_Texture;
@@ -13,6 +14,10 @@ struct SDL_FRect;
 struct Tileset;
 
 using namespace std;
+
+namespace tinyxml2 {
+    class XMLElement;
+}
 
 class Level {
     public:
@@ -24,6 +29,7 @@ class Level {
         void draw2(Graphics &graphics);
 
         vector<Rectangle> checkTileCollisions(const Rectangle &other); 
+        
     protected:
     private:
         string _mapName; 
@@ -45,6 +51,7 @@ class Level {
         void loadMap3(string mapName, Graphics &graphics);
         void loadExternalTileset(const string &source, int firstGid, Graphics &graphics);
         void parseCSVTileData(const string &data, int width, int height, int tileWidth, int tileHeight);
+        void parseCollisionObjects(tinyxml2::XMLElement* objectGroupElement);
 
 }; 
 

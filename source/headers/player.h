@@ -4,6 +4,7 @@
 #include "animated_sprite.h"
 #include "graphics.h"
 #include "globals.h"
+#include "level.h"
 
 class Player : public AnimatedSprite {
 public:
@@ -12,10 +13,12 @@ public:
     void setUpAnimations();
     void animationDone(string currentAnimation);
     void update(float elapsedTime);
+    void update(float elapsedTime, Level& level);
     void draw(Graphics &graphics);
     const float getX() const; 
     const float getY() const;
-    
+    void handleTileCollisions(const vector<Rectangle> &others);
+
     // Movement methods
     void moveLeft();
     void moveRight();

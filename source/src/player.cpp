@@ -1,5 +1,6 @@
 #include "player.h"
 #include "graphics.h"
+#include "level.h"
 #include <cmath>
 #include <iostream>
 
@@ -57,23 +58,18 @@ void Player::animationDone(string currentAnimation) {
 }
 
 void Player::update(float elapsedTime) {
-    // applying gravity
-    /*if (!_grounded) {
+    AnimatedSprite::update(elapsedTime);
+    
+    // Apply gravity
+    if (!_grounded) {
         _dy += player_constants::GRAVITY * elapsedTime;
         if (_dy > player_constants::GRAVITY_CAP) {
-            _dy = player_constants::GRAVITY_CAP; // Cap downward speed
+            _dy = player_constants::GRAVITY_CAP;
         }
-        
-        // Apply air friction
-        if (_dx > 0) {
-            _dx -= player_constants::AIR_FRICTION * elapsedTime;
-            if (_dx < 0) _dx = 0;
-        } else if (_dx < 0) {
-            _dx += player_constants::AIR_FRICTION * elapsedTime;
-            if (_dx > 0) _dx = 0;
-        }
-    } else {
-        // Apply ground friction
+    }
+
+    // Apply friction
+    if (_grounded) {
         if (_dx > 0) {
             _dx -= player_constants::GROUND_FRICTION * elapsedTime;
             if (_dx < 0) _dx = 0;
@@ -81,8 +77,25 @@ void Player::update(float elapsedTime) {
             _dx += player_constants::GROUND_FRICTION * elapsedTime;
             if (_dx > 0) _dx = 0;
         }
-    }*/ 
+    } else {
+        if (_dx > 0) {
+            _dx -= player_constants::AIR_FRICTION * elapsedTime;
+            if (_dx < 0) _dx = 0;
+        } else if (_dx < 0) {
+            _dx += player_constants::AIR_FRICTION * elapsedTime;
+            if (_dx > 0) _dx = 0;
+        }
+    }
 
+    // Update position based on velocity
+    _x += _dx * elapsedTime;
+    _y += _dy * elapsedTime;
+
+    // Update bounding box position
+    _boundingBox = Rectangle(_x, _y, 96 * globals::SPRITE_SCALE, 128 * globals::SPRITE_SCALE);
+}
+
+void Player::update(float elapsedTime, Level& level) {
     AnimatedSprite::update(elapsedTime);
     
     // Normalize diagonal movement so it's not faster than cardinal movement
@@ -91,37 +104,86 @@ void Player::update(float elapsedTime) {
         float normalizedDx = _dx / magnitude;
         float normalizedDy = _dy / magnitude;
         
-        // Calculate new position
-        float newX = _x + normalizedDx * getCurrentSpeed() * elapsedTime;
-        float newY = _y + normalizedDy * getCurrentSpeed() * elapsedTime;
+        // Calculate movement deltas
+        float deltaX = normalizedDx * getCurrentSpeed() * elapsedTime;
+        float deltaY = normalizedDy * getCurrentSpeed() * elapsedTime;
         
         int spriteWidth = 96;
         int spriteHeight = 128;
         
-        // Separate boundary checking for X and Y axes
-        // Only update X if it's within bounds
-        if (newX >= 0 && newX + spriteWidth <= globals::SCREEN_WIDTH) {
-            _x = newX;
-        } else {
-            // If hitting boundary, clamp to boundary
-            if (newX < 0) {
-                _x = 0;
-            } else if (newX + spriteWidth > globals::SCREEN_WIDTH) {
-                _x = globals::SCREEN_WIDTH - spriteWidth;
+        // Store original position
+        float originalX = _x;
+        float originalY = _y;
+        
+        // Try horizontal movement first
+        if (deltaX != 0) {
+            float newX = _x + deltaX;
+            
+            // Check screen boundaries
+            if (newX >= 0 && newX + spriteWidth <= globals::SCREEN_WIDTH) {
+                // Temporarily move to new X position
+                _x = newX;
+                
+                // Update bounding box for collision check
+                _boundingBox = Rectangle(_x, _y, spriteWidth * globals::SPRITE_SCALE, spriteHeight * globals::SPRITE_SCALE);
+                
+                // Check for level collisions
+                vector<Rectangle> collisions = level.checkTileCollisions(_boundingBox);
+                if (collisions.size() > 0) {
+                    // Collision detected - revert X movement
+                    _x = originalX;
+                    cout << "Horizontal collision prevented!" << endl;
+                } else {
+                    // No collision - keep the new X position
+                    cout << "Horizontal movement OK" << endl;
+                }
+            } else {
+                // Hit screen boundary - clamp to boundary
+                if (newX < 0) {
+                    _x = 0;
+                } else if (newX + spriteWidth > globals::SCREEN_WIDTH) {
+                    _x = globals::SCREEN_WIDTH - spriteWidth;
+                }
             }
         }
         
-        // Only update Y if it's within bounds
-        if (newY >= 0 && newY + spriteHeight <= globals::SCREEN_HEIGHT) {
-            _y = newY;
-        } else {
-            // If hitting boundary, clamp to boundary
-            if (newY < 0) {
-                _y = 0;
-            } else if (newY + spriteHeight > globals::SCREEN_HEIGHT) {
-                _y = globals::SCREEN_HEIGHT - spriteHeight;
+        // Try vertical movement
+        if (deltaY != 0) {
+            float newY = _y + deltaY;
+            
+            // Check screen boundaries
+            if (newY >= 0 && newY + spriteHeight <= globals::SCREEN_HEIGHT) {
+                // Store current Y for potential revert
+                float currentY = _y;
+                
+                // Temporarily move to new Y position
+                _y = newY;
+                
+                // Update bounding box for collision check
+                _boundingBox = Rectangle(_x, _y, spriteWidth * globals::SPRITE_SCALE, spriteHeight * globals::SPRITE_SCALE);
+                
+                // Check for level collisions
+                vector<Rectangle> collisions = level.checkTileCollisions(_boundingBox);
+                if (collisions.size() > 0) {
+                    // Collision detected - revert Y movement
+                    _y = currentY;
+                    cout << "Vertical collision prevented!" << endl;
+                } else {
+                    // No collision - keep the new Y position
+                    cout << "Vertical movement OK" << endl;
+                }
+            } else {
+                // Hit screen boundary - clamp to boundary
+                if (newY < 0) {
+                    _y = 0;
+                } else if (newY + spriteHeight > globals::SCREEN_HEIGHT) {
+                    _y = globals::SCREEN_HEIGHT - spriteHeight;
+                }
             }
         }
+        
+        // Final bounding box update
+        _boundingBox = Rectangle(_x, _y, spriteWidth * globals::SPRITE_SCALE, spriteHeight * globals::SPRITE_SCALE);
     }
     
     // Reset velocity for next frame
@@ -249,6 +311,37 @@ void Player::stop() {
     }
 }
 
+void Player::handleTileCollisions(const vector<Rectangle> &others) {
+    _grounded = false; // Assume not grounded until a collision from below is detected
+
+    for (const auto &other : others) {
+        if (getBoundingBox().collidesWith(other)) {
+            sides::Side collisionSide = getCollisionSide(other);
+            switch (collisionSide) {
+                case sides::TOP:
+                    _dy = 0;
+                    _y = other.getTop() - getBoundingBox().getHeight() - 1;
+                    break;
+                case sides::BOTTOM:
+                    _dy = 0;
+                    _y = other.getBottom() + 1; // Slight offset to prevent sticking
+                    _grounded = true; // Landed on something
+                    break;
+                case sides::LEFT:
+                    _dx = 0;
+                    _x = other.getLeft() - getBoundingBox().getWidth() - 1;
+                    break;
+                case sides::RIGHT:
+                    _dx = 0;
+                    _x = other.getRight() + 1;
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+}
+
 void Player::setSprinting(bool sprinting) {
     bool wasSprintingBefore = _isSprinting;
     _isSprinting = sprinting;
@@ -282,4 +375,20 @@ float Player::getCurrentSpeed() const {
 Direction Player::getFacing() const {
     return _facing;
 }
+
+/*Rectangle Player::getCollisionRect() const {
+    // Make collision box smaller than sprite for better gameplay
+    float margin = 10.0f;
+    return Rectangle(_x + margin, _y + margin, 96 - (margin * 2), 128 - (margin * 2));
+}
+
+Rectangle Player::getPredictedCollisionRect(float deltaX, float deltaY) const {
+    float margin = 10.0f;
+    return Rectangle(_x + deltaX + margin, _y + deltaY + margin, 96 - (margin * 2), 128 - (margin * 2));
+}
+
+void Player::setPosition(float x, float y) {
+    _x = x;
+    _y = y;
+}*/
 

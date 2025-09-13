@@ -11,6 +11,7 @@
 #include "level.h"
 #include "graphics.h"
 #include "globals.h"
+#include "rectangle.h"
 #include "tinyxml2.h"
 
 using namespace tinyxml2;
@@ -67,8 +68,7 @@ void Level::loadMap3(string mapName, Graphics &graphics) {
     cout << "Map size: " << mapWidth << "x" << mapHeight << " tiles" << endl;
     cout << "Tile size: " << tileWidth << "x" << tileHeight << " pixels" << endl;
     
-    // For now, load the tileset image directly (bypassing external tileset)
-    // We know tile ID 71 is being used, so let's load the tilesheet directly
+    // Load tileset
     string tilesetPath = "../content/background2/Tilesheet/mapPack_tilesheet.png";
     SDL_Surface* surface = graphics.loadSurface(tilesetPath);
     if (surface) {
@@ -76,30 +76,60 @@ void Level::loadMap3(string mapName, Graphics &graphics) {
         SDL_DestroySurface(surface);
         
         if (texture) {
-            _tilesets.push_back(Tileset(texture, 1)); // firstgid = 1
+            _tilesets.push_back(Tileset(texture, 1));
             cout << "Loaded tileset directly: " << tilesetPath << endl;
         }
-    } else {
-        cerr << "Failed to load tileset image: " << tilesetPath << endl;
-        return;
     }
     
-    // Load layer data
+    // Load tile layers
     XMLElement* layerElement = mapElement->FirstChildElement("layer");
     while (layerElement) {
         XMLElement* dataElement = layerElement->FirstChildElement("data");
         if (dataElement) {
             const char* encoding = dataElement->Attribute("encoding");
             if (encoding && string(encoding) == "csv") {
-                // Parse CSV data
                 string csvData = dataElement->GetText();
                 parseCSVTileData(csvData, mapWidth, mapHeight, tileWidth, tileHeight);
             }
         }
         layerElement = layerElement->NextSiblingElement("layer");
     }
+
+    /*XMLElement* objectGroupElement = mapElement->FirstChildElement("objectgroup");
+    if (objectGroupElement) {
+        while (objectGroupElement) {
+            stringstream ss; 
+            const char* name = objectGroupElement->Attribute("name");
+            if (name && string(name) == "collisions") {
+                XMLElement* objectElement = objectGroupElement->FirstChildElement("object");
+                if (objectElement) {
+                    while (objectElement) {
+                        float x, y, width, height;
+                        x = objectElement->FloatAttribute("x");
+                        y = objectElement->FloatAttribute("y");
+                        width = objectElement->FloatAttribute("width");
+                        height = objectElement->FloatAttribute("height");
+                        _collisionRects.push_back(Rectangle(ceil(x), ceil(y), ceil(width), ceil(height)));
+                        objectElement = objectElement->NextSiblingElement("object");
+                    }  
+                    cout << "Parsed " << _collisionRects.size() << " collision rectangles." << endl;
+                }
+            }
+            objectGroupElement = objectGroupElement->NextSiblingElement("objectgroup");
+        }
+    }*/ 
     
-    cout << "Map loaded successfully! Created " << _tileList.size() << " tiles." << endl;
+    //NEW: Load collision object groups
+    XMLElement* objectGroupElement = mapElement->FirstChildElement("objectgroup");
+    while (objectGroupElement) {
+        const char* layerName = objectGroupElement->Attribute("name");
+        if (layerName && string(layerName) == "collisions") {
+            parseCollisionObjects(objectGroupElement);
+        }
+        objectGroupElement = objectGroupElement->NextSiblingElement("objectgroup");
+    }
+    
+    cout << "Map loaded successfully! Created " << _tileList.size() << " tiles and " << _collisionRects.size() << " collision objects." << endl;
 }
 
 void Level::loadExternalTileset(const string& tsxPath, int firstGid, Graphics& graphics) {
@@ -261,6 +291,40 @@ void Level::loadMap1(string mapName, Graphics &graphics) {
     }
 }
 
+void Level::parseCollisionObjects(XMLElement* objectGroupElement) {
+    cout << "parseCollisionObjects called!" << endl;
+    if (!objectGroupElement) {
+        cerr << "No object group element provided!" << endl;
+        return;
+    }
+    XMLElement* objectElement = objectGroupElement->FirstChildElement("object");
+    int objectCount = 0;
+    while (objectElement) {
+        float x, y, width, height;
+        
+        if (objectElement->QueryFloatAttribute("x", &x) != XML_SUCCESS) {
+            cout << "Warning: No x attribute for object " << objectCount << endl;
+            x = 0.0f;
+        }
+        if (objectElement->QueryFloatAttribute("y", &y) != XML_SUCCESS) {
+            cout << "Warning: No y attribute for object " << objectCount << endl;
+            y = 0.0f;
+        }
+        if (objectElement->QueryFloatAttribute("width", &width) != XML_SUCCESS) {
+            cout << "Warning: No width attribute for object " << objectCount << endl;
+            width = 32.0f;
+        }
+        if (objectElement->QueryFloatAttribute("height", &height) != XML_SUCCESS) {
+            cout << "Warning: No height attribute for object " << objectCount << endl;
+            height = 32.0f;
+        }
+        _collisionRects.push_back(Rectangle(ceil(x), ceil(y), ceil(width), ceil(height)));
+        objectElement = objectElement->NextSiblingElement("object");
+        objectCount++;
+    }
+    cout << "Parsed " << _collisionRects.size() << " collision rectangles." << endl;
+}
+
 /*void Level::loadMap(string mapName, Graphics &graphics) {
     cout << "Attempting to load: " << mapName << endl;
     cout << "Looking for file at: ../content/background/Samples/colored_castle.png" << endl;
@@ -303,6 +367,10 @@ vector<Rectangle> Level::checkTileCollisions(const Rectangle &other) {
 void Level::draw2(Graphics &graphics) {
     for (auto& tile : _tileList) {
         tile.draw(graphics);
+    }
+
+    for (auto& rect : _collisionRects) {
+        //rect.debugDraw(graphics);
     }
 
     if (_tileList.empty()) {

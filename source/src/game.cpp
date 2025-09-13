@@ -38,7 +38,7 @@ void Game::gameLoop() {
     bool running = true;
     int LAST_UPDATE_TIME = SDL_GetTicks(); // Get the current time in milliseconds
     _player = Player(graphics, 100, 100);
-    _level = Level("level1", Vector2D(0,0), graphics);
+    _level = Level("level2", Vector2D(0,0), graphics);
     //_player = AnimatedSprite(graphics, "..//content//spritesheet//Roguelike//roguelikeChar_transparent.png", 0, 0, 16, 16, 100, 100, 100);
     //_player.setUpAnimations();
     //_player.playAnimation("RunRight");
@@ -133,7 +133,10 @@ void Game::draw(Graphics &graphics) {
 }
 
 void Game::update(float elapsedTime) {
-    _player.update(elapsedTime);
+    _player.update(elapsedTime, _level);
     _level.update(static_cast<int>(elapsedTime));
-
+    vector<Rectangle> others; 
+    if ((others = _level.checkTileCollisions(_player.getBoundingBox())).size() > 0) {
+        _player.handleTileCollisions(others);
+    }
 }

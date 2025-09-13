@@ -56,6 +56,8 @@ class Rectangle {
             return _width > 0 && _height > 0 && _x >= 0 && _y >= 0;
         }
 
+        // void debugDraw(Graphics &graphics, SDL_Color color) const;
+        
     private:
         float _x, _y, _width, _height;
     }; 
